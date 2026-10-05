@@ -5,10 +5,9 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
-import type { HealthResponse } from '@droplink/shared';
 import { createRoomHandlers } from './api/rooms.js';
 import { createPersistentRoomManager } from './rooms/persistentRoomManager.js';
-import type { IceCandidate, SignalingDescription } from '@droplink/shared';
+import type { HealthResponse, IceCandidate, SignalingDescription } from './types/protocol.js';
 
 const port = Number(process.env.PORT ?? 3001);
 const clientUrl = process.env.CLIENT_URL ?? 'http://localhost:5173';

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
-import type { DataMessage, FileCompleteMessage, FileStartMessage, IceCandidate, SignalingDescription } from '@droplink/shared';
+import type { FileCompleteMessage, FileStartMessage, IceCandidate, SignalingDescription, TextMessage } from '../types/protocol';
 
 const serverUrl = import.meta.env.VITE_SERVER_URL ?? (import.meta.env.DEV ? 'http://localhost:3001' : '');
 const FILE_CHUNK_SIZE = 64 * 1024;
@@ -12,7 +12,7 @@ export type Transfer = { id: string; name: string; size: number; transferred: nu
 
 export function useWebRtc(roomId: string | undefined, participantId: string | undefined, sessionToken: string | undefined, isInitiator: boolean) {
   const [state, setState] = useState<ConnectionState>('idle');
-  const [messages, setMessages] = useState<DataMessage[]>([]);
+  const [messages, setMessages] = useState<TextMessage[]>([]);
   const [receivedFiles, setReceivedFiles] = useState<ReceivedFile[]>([]);
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -49,7 +49,7 @@ export function useWebRtc(roomId: string | undefined, participantId: string | un
           return;
         }
         try {
-          const message = JSON.parse(event.data as string) as DataMessage | FileStartMessage | FileCompleteMessage;
+          const message = JSON.parse(event.data as string) as TextMessage | FileStartMessage | FileCompleteMessage;
           if (message.type === 'text') setMessages((current) => [...current, { ...message, sender: 'peer' }]);
           if (message.type === 'file-start') {
             incomingFileRef.current = { metadata: message, chunks: [] };
@@ -127,7 +127,7 @@ export function useWebRtc(roomId: string | undefined, participantId: string | un
   const sendText = (text: string) => {
     const channel = channelRef.current;
     if (!channel || channel.readyState !== 'open') return false;
-    const message: DataMessage = { type: 'text', id: crypto.randomUUID(), timestamp: Date.now(), text, sender: 'local' };
+    const message: TextMessage = { type: 'text', id: crypto.randomUUID(), timestamp: Date.now(), text, sender: 'local' };
     channel.send(JSON.stringify(message));
     setMessages((current) => [...current, message]);
     return true;

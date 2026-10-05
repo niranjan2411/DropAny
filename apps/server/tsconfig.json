@@ -9,6 +9,5 @@
     "strict": true,
     "target": "ES2022"
   },
-  "references": [{ "path": "../../packages/shared" }],
   "include": ["src"]
 }

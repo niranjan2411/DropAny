@@ -27,6 +27,7 @@ app.use(express.json({ limit: '256kb' }));
 
 const roomCreationLimit = rateLimit({ windowMs: 60_000, limit: 10, standardHeaders: 'draft-7', legacyHeaders: false });
 const roomJoinLimit = rateLimit({ windowMs: 60_000, limit: 30, standardHeaders: 'draft-7', legacyHeaders: false });
+const visitorLimit = rateLimit({ windowMs: 60_000, limit: 60, standardHeaders: 'draft-7', legacyHeaders: false });
 
 const roomHandlers = createRoomHandlers(roomManager);
 app.post('/api/rooms', roomCreationLimit, roomHandlers.create);
@@ -51,6 +52,15 @@ app.get('/api/ice-servers', (_request, response) => {
     iceServers.push({ urls: process.env.TURN_SERVER_URL, username: process.env.TURN_USERNAME, credential: process.env.TURN_PASSWORD });
   }
   response.json({ iceServers });
+});
+
+app.post('/api/visits', visitorLimit, async (request, response) => {
+  const visitorId = typeof request.body?.visitorId === 'string' ? request.body.visitorId.trim() : '';
+  if (!/^[a-zA-Z0-9-]{16,128}$/.test(visitorId)) {
+    response.status(400).json({ error: 'Invalid visitor identifier.' });
+    return;
+  }
+  response.json({ total: await roomManager.registerVisit(visitorId) });
 });
 
 const io = new Server(httpServer, { cors: { origin: clientUrl } });

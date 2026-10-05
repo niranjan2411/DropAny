@@ -8,6 +8,19 @@ export type StoredSession = {
 };
 
 const key = 'droplink.session';
+const visitorKey = 'droplink.visitor.id';
+
+export function getVisitorId(): string {
+  try {
+    const existing = localStorage.getItem(visitorKey);
+    if (existing && /^[a-zA-Z0-9-]{16,128}$/.test(existing)) return existing;
+    const visitorId = crypto.randomUUID();
+    localStorage.setItem(visitorKey, visitorId);
+    return visitorId;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
 
 export function readSession(): StoredSession | undefined {
   try {

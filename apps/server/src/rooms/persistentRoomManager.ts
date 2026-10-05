@@ -19,6 +19,8 @@ export class PersistentRoomManager {
   private readonly graceMs: number;
   private readonly maxParticipants: number;
   private readonly redis?: any;
+  private visitCount = 0;
+  private readonly visitorIds = new Set<string>();
 
   constructor(options: { ttlSeconds: number; graceSeconds: number; maxParticipants: number; redis?: any }) {
     this.ttlMs = options.ttlSeconds * 1000;
@@ -63,6 +65,19 @@ export class PersistentRoomManager {
     const room = await this.find(identifier);
     if (!room) throw new PersistentRoomError('ROOM_NOT_FOUND');
     return { id: room.id, displayCode: room.displayCode, createdAt: room.createdAt, expiresAt: room.expiresAt, lastActivity: room.lastActivity, participants: room.participants.length };
+  }
+
+  async registerVisit(visitorId: string): Promise<number> {
+    if (this.redis) {
+      const added = await this.redis.set(`droplink:visitor:${visitorId}`, '1', { NX: true });
+      if (added) return Number(await this.redis.incr('droplink:visits'));
+      const total = await this.redis.get('droplink:visits');
+      return Number(total ?? 0);
+    }
+    if (this.visitorIds.has(visitorId)) return this.visitCount;
+    this.visitorIds.add(visitorId);
+    this.visitCount += 1;
+    return this.visitCount;
   }
 
   async disconnect(roomId: string, participantId: string): Promise<void> {

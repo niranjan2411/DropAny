@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useWebRtc } from './services/webrtc';
 import { QrScanner } from './components/QrScanner';
-import { clearSession, fetchWithRetry, readSession, writeSession } from './services/session';
+import { clearSession, fetchWithRetry, getVisitorId, readSession, writeSession } from './services/session';
 import './styles.css';
 
 type Room = {
@@ -14,7 +14,11 @@ type Room = {
   role: 'initiator' | 'joiner';
 };
 
-const apiUrl = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:3001';
+const apiUrl = import.meta.env.VITE_SERVER_URL ?? (import.meta.env.DEV ? 'http://localhost:3001' : '');
+
+function VisitFooter({ total }: { total?: number }) {
+  return <footer className="site-footer">Visitors: <strong>{total?.toLocaleString() ?? '—'}</strong></footer>;
+}
 
 function App() {
   const [room, setRoom] = useState<Room>();
@@ -25,9 +29,16 @@ function App() {
   const [error, setError] = useState('');
   const [scanning, setScanning] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [visitCount, setVisitCount] = useState<number>();
   const [restoring, setRestoring] = useState(() => Boolean(readSession()));
   const connection = useWebRtc(room?.id, room?.participantId, room?.sessionToken, isInitiator);
   const persistRoom = (payload: Room) => writeSession({ roomId: payload.id, displayCode: payload.displayCode, expiresAt: payload.expiresAt, participantId: payload.participantId, sessionToken: payload.sessionToken, role: payload.role });
+
+  useEffect(() => {
+    void fetchWithRetry(`${apiUrl}/api/visits`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ visitorId: getVisitorId() }) }).then(async (response) => {
+      if (response.ok) setVisitCount((await response.json()).total);
+    }).catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     const stored = readSession();
@@ -130,6 +141,7 @@ function App() {
           </section>
           {(connection.state === 'disconnected' || connection.state === 'failed') && <button onClick={leaveRoom}>Create new connection</button>}
           <button className="secondary" onClick={leaveRoom}>Leave room</button>
+          <VisitFooter total={visitCount} />
         </section>
       </main>
     );
@@ -149,6 +161,7 @@ function App() {
         {error && <p className="error" role="alert">{error}</p>}
       </section>
       <section className="principles"><div><b>01</b><span>Temporary rooms</span></div><div><b>02</b><span>No account required</span></div><div><b>03</b><span>Direct device-to-device</span></div><div><b>04</b><span>No permanent storage</span></div></section>
+      <VisitFooter total={visitCount} />
     </main>
   );
 }

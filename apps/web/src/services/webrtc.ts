@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import type { DataMessage, FileCompleteMessage, FileStartMessage, IceCandidate, SignalingDescription } from '@droplink/shared';
 
-const serverUrl = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:3001';
+const serverUrl = import.meta.env.VITE_SERVER_URL ?? (import.meta.env.DEV ? 'http://localhost:3001' : '');
 const FILE_CHUNK_SIZE = 64 * 1024;
 const BUFFERED_AMOUNT_LIMIT = 1024 * 1024;
 
@@ -22,7 +22,7 @@ export function useWebRtc(roomId: string | undefined, participantId: string | un
 
   useEffect(() => {
     if (!roomId) return;
-    const nextSocket = io(serverUrl, { autoConnect: false, reconnection: true, reconnectionAttempts: 8, reconnectionDelay: 1000, reconnectionDelayMax: 10000, randomizationFactor: 0.25 });
+    const nextSocket = io(serverUrl || undefined, { autoConnect: false, path: '/socket.io', reconnection: true, reconnectionAttempts: 8, reconnectionDelay: 1000, reconnectionDelayMax: 10000, randomizationFactor: 0.25 });
     const peer = new RTCPeerConnection({
       iceServers: import.meta.env.VITE_STUN_SERVER_URL ? [{ urls: import.meta.env.VITE_STUN_SERVER_URL }] : [],
     });

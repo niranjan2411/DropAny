@@ -2,6 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { PersistentRoomError, PersistentRoomManager } from './persistentRoomManager.js';
 
 describe('PersistentRoomManager', () => {
+  it('counts each anonymous visitor ID only once', async () => {
+    const manager = new PersistentRoomManager({ ttlSeconds: 600, graceSeconds: 60, maxParticipants: 2 });
+    await expect(manager.registerVisit('visitor-one-123456')).resolves.toBe(1);
+    await expect(manager.registerVisit('visitor-one-123456')).resolves.toBe(1);
+    await expect(manager.registerVisit('visitor-two-123456')).resolves.toBe(2);
+  });
+
   it('keeps a disconnected participant during the grace period', async () => {
     const manager = new PersistentRoomManager({ ttlSeconds: 600, graceSeconds: 60, maxParticipants: 2 });
     const room = await manager.create();

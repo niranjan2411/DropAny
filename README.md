@@ -58,7 +58,7 @@ Legal pages are available at `/terms`, `/acceptable-use`, and `/privacy`. Contac
 
 ## Production
 
-Build the web workspace for a static host such as Vercel and run the server as a Node.js service behind HTTPS/WSS. Use managed Redis for temporary room metadata and a dedicated TURN service. Set `CLIENT_URL`, secure transport, rate limits, and ephemeral TURN credentials in the deployment environment.
+Deploy with Render using the included `render.yaml` Blueprint. It defines a Node web service for `apps/server` and a static site for `apps/web`. Set the generated API service URL as `VITE_SERVER_URL` on the static site and the static site URL as `CLIENT_URL` on the API service. Configure managed Redis with `REDIS_URL` and a dedicated TURN service with the TURN variables. Render supplies `PORT` to the API service.
 
 ## Known limitations
 

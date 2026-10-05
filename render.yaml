@@ -1,0 +1,71 @@
+services:
+  - type: web
+    name: droplink-api
+    runtime: node
+    rootDir: apps/server
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CLIENT_URL
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: droplink-redis
+          property: connectionString
+      - key: STUN_SERVER_URL
+        value: stun:stun.l.google.com:19302
+      - key: TURN_SERVER_URL
+        sync: false
+      - key: TURN_USERNAME
+        sync: false
+      - key: TURN_PASSWORD
+        sync: false
+      - key: ROOM_TTL_SECONDS
+        value: "600"
+      - key: PARTICIPANT_RECONNECT_GRACE_SECONDS
+        value: "60"
+      - key: MAX_ROOM_PARTICIPANTS
+        value: "2"
+      - key: ROOM_JOIN_RATE_LIMIT
+        value: "30"
+      - key: ROOM_JOIN_RATE_WINDOW_SECONDS
+        value: "60"
+      - key: ROOM_JOIN_MAX_ATTEMPTS
+        value: "8"
+      - key: ROOM_JOIN_BLOCK_SECONDS
+        value: "60"
+
+  - type: keyvalue
+    name: droplink-redis
+    plan: free
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: public Redis access required by the API service
+
+  - type: web
+    name: droplink-web
+    rootDir: apps/web
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: apps/web/dist
+    routes:
+      - type: rewrite
+        source: /terms
+        destination: /index.html
+      - type: rewrite
+        source: /acceptable-use
+        destination: /index.html
+      - type: rewrite
+        source: /privacy
+        destination: /index.html
+      - type: rewrite
+        source: /join/*
+        destination: /index.html
+    envVars:
+      - key: VITE_SERVER_URL
+        sync: false
+      - key: VITE_STUN_SERVER_URL
+        value: stun:stun.l.google.com:19302

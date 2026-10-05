@@ -125,8 +125,6 @@ setInterval(() => void roomManagerPromise.then((manager) => manager.cleanup()), 
 
 export default app;
 
-if (process.env.VERCEL !== '1') {
-  httpServer.listen(port, () => {
-    console.log(`DropLink server listening on http://localhost:${port}`);
-  });
-}
+httpServer.listen(port, () => {
+  console.log(`DropLink server listening on port ${port}`);
+});

@@ -3,6 +3,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { useWebRtc } from './services/webrtc';
 import { QrScanner } from './components/QrScanner';
 import { clearSession, fetchWithRetry, getVisitorId, readSession, writeSession } from './services/session';
+import { AcceptableUsePage, PrivacyPage, TermsPage } from './pages/LegalPage';
 import './styles.css';
 
 type Room = {
@@ -17,7 +18,7 @@ type Room = {
 const apiUrl = import.meta.env.VITE_SERVER_URL ?? (import.meta.env.DEV ? 'http://localhost:3001' : '');
 
 function VisitFooter({ total }: { total?: number }) {
-  return <footer className="site-footer">Visitors: <strong>{total?.toLocaleString() ?? '—'}</strong></footer>;
+  return <footer className="site-footer"><nav aria-label="Legal"><a href="/terms">Terms of Service</a><span>|</span><a href="/acceptable-use">Acceptable Use Policy</a><span>|</span><a href="/privacy">Privacy Policy</a></nav><span>Visitors: <strong>{total?.toLocaleString() ?? '—'}</strong></span></footer>;
 }
 
 function App() {
@@ -39,6 +40,11 @@ function App() {
       if (response.ok) setVisitCount((await response.json()).total);
     }).catch(() => undefined);
   }, []);
+
+  const pathname = window.location.pathname.replace(/\/$/, '') || '/';
+  if (pathname === '/terms') return <><TermsPage /><VisitFooter total={visitCount} /></>;
+  if (pathname === '/acceptable-use') return <><AcceptableUsePage /><VisitFooter total={visitCount} /></>;
+  if (pathname === '/privacy') return <><PrivacyPage /><VisitFooter total={visitCount} /></>;
 
   useEffect(() => {
     const stored = readSession();
@@ -114,7 +120,7 @@ function App() {
   };
 
   const leaveRoom = async () => {
-    if (room) await fetch(`${apiUrl}/api/rooms/leave`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ roomId: room.id, participantId: room.participantId }) }).catch(() => undefined);
+    if (room) await fetch(`${apiUrl}/api/rooms/leave`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ roomId: room.id, participantId: room.participantId, sessionToken: room.sessionToken }) }).catch(() => undefined);
     clearSession();
     setRoom(undefined);
   };

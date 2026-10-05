@@ -1,5 +1,6 @@
 import type { RequestHandler } from 'express';
 import { PersistentRoomError, type PersistentRoomManager } from '../rooms/persistentRoomManager.js';
+import { isRoomIdentifier } from '../security/roomSecurity.js';
 
 const errorStatus: Record<PersistentRoomError['code'], number> = {
   ROOM_NOT_FOUND: 404,
@@ -22,15 +23,15 @@ export const createRoomHandlers = (roomManager: PersistentRoomManager) => {
 
   const join: RequestHandler = async (request, response) => {
     const identifier = typeof request.body?.identifier === 'string' ? request.body.identifier.trim() : '';
-    if (!identifier || identifier.length > 128) {
-      response.status(400).json({ error: 'Enter a valid room code.' });
+    if (!isRoomIdentifier(identifier)) {
+      response.status(400).json({ error: 'Unable to join that room.' });
       return;
     }
     try {
       response.json(await roomManager.join(identifier));
     } catch (error) {
       if (error instanceof PersistentRoomError) {
-        response.status(errorStatus[error.code]).json({ error: errorMessage[error.code] });
+        response.status(400).json({ error: 'Unable to join that room.' });
         return;
       }
       response.status(500).json({ error: 'Unable to join this room.' });
@@ -55,27 +56,19 @@ export const createRoomHandlers = (roomManager: PersistentRoomManager) => {
   };
 
   const leave: RequestHandler = async (request, response) => {
-    const { roomId, participantId } = request.body ?? {};
-    if (typeof roomId !== 'string' || typeof participantId !== 'string') {
+    const { roomId, participantId, sessionToken } = request.body ?? {};
+    if (typeof roomId !== 'string' || typeof participantId !== 'string' || typeof sessionToken !== 'string') {
       response.status(400).json({ error: 'Invalid session.' });
       return;
     }
-    await roomManager.leave(roomId, participantId);
-    response.status(204).end();
-  };
-
-  const get: RequestHandler = async (request, response) => {
-    const identifier = typeof request.params.identifier === 'string' ? request.params.identifier : '';
     try {
-      response.json(await roomManager.get(identifier));
+      await roomManager.leave(roomId, participantId, sessionToken);
+      response.status(204).end();
     } catch (error) {
-      if (error instanceof PersistentRoomError) {
-        response.status(errorStatus[error.code]).json({ error: errorMessage[error.code] });
-        return;
-      }
-      response.status(500).json({ error: 'Unable to load this room.' });
+      if (error instanceof PersistentRoomError) { response.status(410).json({ error: 'This room session has expired.' }); return; }
+      response.status(500).json({ error: 'Unable to leave this room.' });
     }
   };
 
-  return { create, join, reconnect, leave, get };
+  return { create, join, reconnect, leave };
 };

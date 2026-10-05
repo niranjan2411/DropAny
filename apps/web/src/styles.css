@@ -57,4 +57,17 @@ progress { width: 180px; accent-color: #bf5a3c; }
 .scanner video { width: min(100%, 520px); max-height: 60vh; object-fit: cover; }
 .site-footer { max-width: 1180px; margin: 32px auto 0; color: #657670; font-size: 12px; text-align: right; }
 .site-footer strong { display: inline-block; margin-left: 6px; border: 1px solid #bdc9c1; border-radius: 3px; padding: 4px 8px; color: #18312f; font-weight: 700; }
+.site-footer nav { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.site-footer a, .brand-link, .back-link { color: inherit; text-decoration: none; }
+.site-footer a:hover, .brand-link:hover, .back-link:hover { color: #bf5a3c; }
+.brand-link { color: #18312f; font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -.04em; }
+.back-link { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; }
+.legal-panel { max-width: 780px; margin: 10vh auto 60px; }
+.legal-panel h1 { max-width: 720px; font-size: clamp(48px, 8vw, 88px); }
+.legal-intro { max-width: 620px; color: #64746f; font-size: 18px; line-height: 1.55; }
+.legal-section { margin-top: 42px; border-top: 1px solid #cbd5ce; padding-top: 18px; }
+.legal-section h2 { color: #18312f; font-family: 'Space Grotesk', sans-serif; font-size: 20px; }
+.legal-section p, .legal-contact { color: #526660; font-size: 16px; line-height: 1.7; }
+.legal-contact { margin-top: 48px; border-top: 1px solid #cbd5ce; padding-top: 18px; }
+@media (max-width: 650px) { .site-footer { text-align: left; } .site-footer nav { justify-content: flex-start; } .legal-panel { margin-top: 64px; } }
 @media (max-width: 650px) { .shell { padding: 22px 18px; } .hero { margin-top: 90px; } .actions, .join-action { align-items: stretch; flex-direction: column; } .join-action input { width: 100%; } .principles { grid-template-columns: repeat(2, 1fr); } .room-heading { flex-direction: column; } .room-invite { align-items: flex-start; flex-direction: column; } }

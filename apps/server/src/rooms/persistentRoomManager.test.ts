@@ -21,4 +21,11 @@ describe('PersistentRoomManager', () => {
     const room = await manager.create();
     await expect(manager.reconnect(room.id, room.participantId, 'wrong')).rejects.toThrow(new PersistentRoomError('SESSION_INVALID'));
   });
+
+  it('requires the session token to leave', async () => {
+    const manager = new PersistentRoomManager({ ttlSeconds: 600, graceSeconds: 60, maxParticipants: 2 });
+    const room = await manager.create();
+    await expect(manager.leave(room.id, room.participantId, 'wrong')).rejects.toThrow(new PersistentRoomError('SESSION_INVALID'));
+    await expect(manager.leave(room.id, room.participantId, room.sessionToken)).resolves.toBeUndefined();
+  });
 });

@@ -89,9 +89,11 @@ export class PersistentRoomManager {
     await this.save(room);
   }
 
-  async leave(roomId: string, participantId: string): Promise<void> {
+  async leave(roomId: string, participantId: string, sessionToken: string): Promise<void> {
     const room = await this.find(roomId, false);
     if (!room) return;
+    const authorized = room.participants.some((participant) => participant.participantId === participantId && participant.sessionToken === sessionToken);
+    if (!authorized) throw new PersistentRoomError('SESSION_INVALID');
     room.participants = room.participants.filter((participant) => participant.participantId !== participantId);
     if (room.participants.length === 0) {
       await this.remove(room);

@@ -42,9 +42,6 @@ function App() {
   }, []);
 
   const pathname = window.location.pathname.replace(/\/$/, '') || '/';
-  if (pathname === '/terms') return <><TermsPage /><VisitFooter total={visitCount} /></>;
-  if (pathname === '/acceptable-use') return <><AcceptableUsePage /><VisitFooter total={visitCount} /></>;
-  if (pathname === '/privacy') return <><PrivacyPage /><VisitFooter total={visitCount} /></>;
 
   useEffect(() => {
     const stored = readSession();
@@ -105,10 +102,10 @@ function App() {
     }
   };
 
-  const joinRoom = async () => {
+  const joinRoom = async (identifier = joinCode) => {
     setError('');
     try {
-      const response = await fetchWithRetry(`${apiUrl}/api/rooms/join`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ identifier: joinCode.replace(/\s/g, '') }) });
+      const response = await fetchWithRetry(`${apiUrl}/api/rooms/join`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ identifier: identifier.replace(/\s/g, '') }) });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? 'Unable to join this room.');
       persistRoom(payload);
@@ -124,6 +121,10 @@ function App() {
     clearSession();
     setRoom(undefined);
   };
+
+  if (pathname === '/terms') return <><TermsPage /><VisitFooter total={visitCount} /></>;
+  if (pathname === '/acceptable-use') return <><AcceptableUsePage /><VisitFooter total={visitCount} /></>;
+  if (pathname === '/privacy') return <><PrivacyPage /><VisitFooter total={visitCount} /></>;
 
   if (room) {
     return (
@@ -162,8 +163,8 @@ function App() {
         <p className="eyebrow">Send without the ceremony</p>
         <h1>Files move better<br /><em>between your devices.</em></h1>
         <p className="lede">Create a temporary room, connect two screens, and share directly. No account. No phone number.</p>
-        <div className="actions"><button onClick={createRoom}>Create room <span>→</span></button><div className="join-action"><input aria-label="Room code" inputMode="numeric" placeholder="Room code" value={joinCode} onChange={(event) => setJoinCode(event.target.value)} /><button className="secondary" onClick={joinRoom}>Join room</button><button className="secondary" onClick={() => setScanning(true)}>Scan QR</button></div></div>
-        {scanning && <QrScanner onResult={(value) => { setJoinCode(value.split('/join/').pop() ?? value); setScanning(false); }} onClose={() => setScanning(false)} />}
+        <div className="actions"><button onClick={createRoom}>Create room <span>→</span></button><div className="join-action"><input aria-label="Room code" inputMode="numeric" placeholder="Room code" value={joinCode} onChange={(event) => setJoinCode(event.target.value)} /><button className="secondary" onClick={() => void joinRoom()}>Join room</button><button className="secondary" onClick={() => setScanning(true)}>Scan QR</button></div></div>
+        {scanning && <QrScanner onResult={(value) => { const scannedIdentifier = (value.split('/join/').pop() ?? value).split('?')[0].replace(/\s/g, ''); setJoinCode(scannedIdentifier); setScanning(false); void joinRoom(scannedIdentifier); }} onClose={() => setScanning(false)} />}
         {error && <p className="error" role="alert">{error}</p>}
       </section>
       <section className="principles"><div><b>01</b><span>Temporary rooms</span></div><div><b>02</b><span>No account required</span></div><div><b>03</b><span>Direct device-to-device</span></div><div><b>04</b><span>No permanent storage</span></div></section>

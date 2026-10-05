@@ -55,6 +55,7 @@ progress { width: 180px; accent-color: #bf5a3c; }
 .chat-compose textarea { flex: 1; resize: vertical; border: 1px solid #bdc9c1; padding: 10px; background: rgba(255,255,255,.5); color: #18312f; }
 .scanner { position: fixed; inset: 10%; z-index: 2; display: grid; place-items: center; gap: 12px; padding: 24px; background: #f4f0e9; border: 1px solid #18312f; }
 .scanner video { width: min(100%, 520px); max-height: 60vh; object-fit: cover; }
+.scanner-actions { display: flex; gap: 8px; }
 .site-footer { max-width: 1180px; margin: 32px auto 0; color: #657670; font-size: 12px; text-align: right; }
 .site-footer strong { display: inline-block; margin-left: 6px; border: 1px solid #bdc9c1; border-radius: 3px; padding: 4px 8px; color: #18312f; font-weight: 700; }
 .site-footer nav { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }

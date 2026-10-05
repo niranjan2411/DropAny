@@ -6,7 +6,7 @@ import helmet from 'helmet';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import { createRoomHandlers } from './api/rooms.js';
-import { createPersistentRoomManager } from './rooms/persistentRoomManager.js';
+import { createPersistentRoomManager, type PersistentRoomManager } from './rooms/persistentRoomManager.js';
 import type { HealthResponse, IceCandidate, SignalingDescription } from './types/protocol.js';
 import { isAuthorizedSession, isIceCandidate, isParticipantIdentifier, isRoomIdentifier, isSignalingDescription, JoinAttemptTracker } from './security/roomSecurity.js';
 
@@ -15,7 +15,7 @@ const clientUrl = process.env.CLIENT_URL ?? 'http://localhost:5173';
 const app = express();
 const httpServer = createServer(app);
 app.set('trust proxy', 1);
-const roomManager = await createPersistentRoomManager({
+const roomManagerPromise: Promise<PersistentRoomManager> = createPersistentRoomManager({
   ttlSeconds: Number(process.env.ROOM_TTL_SECONDS ?? 600),
   graceSeconds: Number(process.env.PARTICIPANT_RECONNECT_GRACE_SECONDS ?? 60),
   maxParticipants: Number(process.env.MAX_ROOM_PARTICIPANTS ?? 2),
@@ -41,7 +41,7 @@ const roomJoinGuard = (request: express.Request, response: express.Response, nex
 };
 const visitorLimit = rateLimit({ windowMs: 60_000, limit: 60, standardHeaders: 'draft-7', legacyHeaders: false });
 
-const roomHandlers = createRoomHandlers(roomManager);
+const roomHandlers = createRoomHandlers(roomManagerPromise);
 app.post('/api/rooms', roomCreationLimit, roomHandlers.create);
 app.post('/api/rooms/join', roomJoinLimit, roomJoinGuard, roomHandlers.join);
 app.post('/api/rooms/reconnect', roomHandlers.reconnect);
@@ -71,7 +71,7 @@ app.post('/api/visits', visitorLimit, async (request, response) => {
     response.status(400).json({ error: 'Invalid visitor identifier.' });
     return;
   }
-  response.json({ total: await roomManager.registerVisit(visitorId) });
+  response.json({ total: await (await roomManagerPromise).registerVisit(visitorId) });
 });
 
 const io = new Server(httpServer, { cors: { origin: clientUrl }, maxHttpBufferSize: 64 * 1024 });
@@ -89,7 +89,7 @@ io.on('connection', (socket) => {
       return;
     }
     try {
-      const room = await roomManager.reconnect(roomId, participantId, sessionToken);
+      const room = await (await roomManagerPromise).reconnect(roomId, participantId, sessionToken);
       joinTracker.success(key);
       socket.join(room.id);
       socket.data.roomId = room.id;
@@ -115,14 +115,18 @@ io.on('connection', (socket) => {
     const roomId = socket.data.roomId as string | undefined;
     const participantId = socket.data.participantId as string | undefined;
     if (roomId && participantId) {
-      void roomManager.disconnect(roomId, participantId);
+      void roomManagerPromise.then((manager) => manager.disconnect(roomId, participantId));
       socket.to(roomId).emit('peer-left');
     }
   });
 });
 
-setInterval(() => void roomManager.cleanup(), 30_000).unref();
+setInterval(() => void roomManagerPromise.then((manager) => manager.cleanup()), 30_000).unref();
 
-httpServer.listen(port, () => {
-  console.log(`DropLink server listening on http://localhost:${port}`);
-});
+export default app;
+
+if (process.env.VERCEL !== '1') {
+  httpServer.listen(port, () => {
+    console.log(`DropLink server listening on http://localhost:${port}`);
+  });
+}

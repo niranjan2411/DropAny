@@ -16,9 +16,10 @@ const errorMessage: Record<PersistentRoomError['code'], string> = {
   SESSION_INVALID: 'This room session has expired.',
 };
 
-export const createRoomHandlers = (roomManager: PersistentRoomManager) => {
+export const createRoomHandlers = (roomManagerSource: PersistentRoomManager | Promise<PersistentRoomManager>) => {
+  const manager = () => Promise.resolve(roomManagerSource);
   const create: RequestHandler = async (_request, response) => {
-    response.status(201).json(await roomManager.create());
+    response.status(201).json(await (await manager()).create());
   };
 
   const join: RequestHandler = async (request, response) => {
@@ -28,7 +29,7 @@ export const createRoomHandlers = (roomManager: PersistentRoomManager) => {
       return;
     }
     try {
-      response.json(await roomManager.join(identifier));
+      response.json(await (await manager()).join(identifier));
     } catch (error) {
       if (error instanceof PersistentRoomError) {
         response.status(400).json({ error: 'Unable to join that room.' });
@@ -45,7 +46,7 @@ export const createRoomHandlers = (roomManager: PersistentRoomManager) => {
       return;
     }
     try {
-      response.json(await roomManager.reconnect(roomId, participantId, sessionToken));
+      response.json(await (await manager()).reconnect(roomId, participantId, sessionToken));
     } catch (error) {
       if (error instanceof PersistentRoomError) {
         response.status(error.code === 'SESSION_INVALID' ? 410 : errorStatus[error.code]).json({ error: error.code === 'SESSION_INVALID' ? 'This room session has expired.' : errorMessage[error.code] });
@@ -62,7 +63,7 @@ export const createRoomHandlers = (roomManager: PersistentRoomManager) => {
       return;
     }
     try {
-      await roomManager.leave(roomId, participantId, sessionToken);
+      await (await manager()).leave(roomId, participantId, sessionToken);
       response.status(204).end();
     } catch (error) {
       if (error instanceof PersistentRoomError) { response.status(410).json({ error: 'This room session has expired.' }); return; }

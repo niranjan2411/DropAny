@@ -1,0 +1,15 @@
+{
+  "name": "droplink",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace @droplink/server\" \"npm run dev --workspace @droplink/web\"",
+    "build": "npm run build --workspace @droplink/shared && npm run build --workspace @droplink/server && npm run build --workspace @droplink/web",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "typescript": "^5.7.3"
+  }
+}
